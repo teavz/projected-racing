@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beat the Grid</title>
+  <link rel="stylesheet" href="/dashboard/dashboard.css">
+</head>
+<body>
+  <header>
+    <div>
+      <div class="eyebrow">PROJECTED RACING / BEAT THE GRID</div>
+      <h1 id="circuitLabel">Waiting for a session</h1>
+      <p id="instructions">Create a session from the operator dock. Live data arrives as servo samples.</p>
+    </div>
+    <div class="banner"><span class="eyebrow">STATE</span><strong id="banner">IDLE</strong></div>
+  </header>
+  <main>
+    <section class="panel">
+      <div class="eyebrow">LAP</div>
+      <div class="time" id="lap">—</div>
+      <div class="delta" id="delta">—</div>
+      <div class="meta">
+        <span>BOSS<b id="boss">—</b></span>
+        <span>BEST<b id="best">—</b></span>
+        <span>ATTEMPT<b id="attempt">—</b></span>
+        <span>TRACKING<b id="tracking">unknown</b></span>
+        <span>FEED<b id="feed">idle</b></span>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="eyebrow">LEADERBOARD</div>
+      <table>
+        <thead><tr><th>#</th><th>Driver</th><th>Lap</th><th>Delta</th></tr></thead>
+        <tbody id="board"></tbody>
+      </table>
+    </section>
+    <section class="panel operator" id="operator">
+      <label>CIRCUIT<select id="circuit"></select></label>
+      <label>DIFFICULTY<select id="difficulty"><option>rookie</option><option selected>grid</option><option>boss</option></select></label>
+      <label>DRIVER<input id="driver" value="Ada Lovelace" maxlength="40"></label>
+      <label>ACTIONS
+        <span>
+          <button id="register" type="button">Intake</button>
+          <button id="start" class="primary" type="button">Start</button>
+          <button id="reset" type="button">Reset</button>
+          <button id="hold" type="button">Hold</button>
+          <button id="release" type="button">Release</button>
+          <button id="simulate" type="button">Simulate lap</button>
+        </span>
+      </label>
+    </section>
+  </main>
+  <footer>
+    <div class="quality" id="quality">No samples yet.</div>
+    <p>Servo contract v1. This console does not talk to motors, cameras, or radios. Official times come from the scoring service, not from this page's clock.</p>
+  </footer>
+  <script src="/dashboard/dashboard.js"></script>
+</body>
+</html>

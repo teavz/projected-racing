@@ -1,0 +1,13 @@
+{
+  "id": "replace-me",
+  "type": "affine",
+  "version": 1,
+  "description": "Example only. Do not load this as a measured track calibration.",
+  "ax": 1,
+  "bx": 0,
+  "cx": 0,
+  "az": 0,
+  "bz": 1,
+  "cz": 0,
+  "notes": "racingX = ax*servoX + bx*servoY + cx. racingZ = az*servoX + bz*servoY + cz. Y in the servo sample is the second planar axis, not up."
+}

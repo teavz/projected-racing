@@ -1,0 +1,15 @@
+{
+  "name": "projected-racing",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test software/test/*.js",
+    "start": "node software/bin/projected-racing.js serve",
+    "ghosts": "node software/bin/projected-racing.js recompute-ghosts",
+    "simulate": "node software/bin/projected-racing.js simulate --circuit monza",
+    "verify:sim": "node verify.mjs"
+  }
+}

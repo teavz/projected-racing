@@ -1,0 +1,13 @@
+# Risk register
+
+| Risk | Impact | Current handling | Owner next |
+| --- | --- | --- | --- |
+| No OCI tenancy or spend approval | Cloud architecture cannot be demonstrated as provisioned | Local ports only. No apply and no invented resource names | Project managers and Oracle contact |
+| Servo contract differs from the older motion message | Hardware can build the wrong payload | This service accepts only the servo sample. The divergence is recorded in `docs/DESIGN_DECISIONS.md` | Hardware and software together, before a car is connected |
+| Identity calibration is not a survey | Lateral limits and geometric progress are meaningless on a physical track | Affine calibration is required before those checks are trusted | Track calibration owner |
+| Feed timeout is 1500 ms, not 200 ms | A lost car stays on the timing line longer than the older planning note | Timeout is explicit and voids the lap. It is not an accepted SOW number | Scorecard review |
+| Official telemetry may never arrive | Boss line may remain the historical OpenF1 recording | Lineage is stored on the ghost. It is not labeled as live team telemetry | Oracle telemetry decision |
+| Process restart mid-lap | A lap could be silently resumed | Restart voids the open attempt | Operator runbook |
+| Dashboard mistaken for timing authority | Display clock could be quoted as official | Copy says official time comes from the scoring service | Operators |
+| Week 9 playtest run against simulation only | Engagement numbers would be false | Runbook marks the 15-student playtest blocked | Event owner |
+| Public bind without auth | Session and driver names would be exposed | Default bind is `127.0.0.1`. Auth is not implemented | No public deploy in this pass |

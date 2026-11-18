@@ -1,0 +1,34 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createServer } from "../src/server.js";
+import { loadConfig } from "../src/config.js";
+import { testApp } from "./helpers.js";
+
+test("http path covers schema, intake, sample, and stream", async () => {
+  const { app } = await testApp();
+  const config = structuredClone(loadConfig());
+  config.server = { host: "127.0.0.1", port: 0 };
+  const runtime = createServer(app, config);
+  const address = await runtime.listen();
+  const base = `http://127.0.0.1:${address.port}`;
+  const health = await fetch(`${base}/health`);
+  assert.equal((await health.json()).ok, true);
+  const schema = await (await fetch(`${base}/v1/schema/servo`)).json();
+  assert.equal(schema.schemaVersion, 1);
+  assert.ok(schema.required.includes("sequence"));
+  const created = await (await fetch(`${base}/v1/sessions`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ circuitId: "circle", difficulty: "grid" }) })).json();
+  const registered = await (await fetch(`${base}/v1/sessions/${created.sessionId}/commands`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "register-driver", name: "Ada" }) })).json();
+  assert.equal(registered.state, "intake");
+  const ingested = await (await fetch(`${base}/v1/sessions/${created.sessionId}/samples`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ samples: [{ schemaVersion: 1, servoId: "s", role: "human", sequence: 1, sourceTimeMs: 10, clock: "epoch", progress: 0.2, lock: true }] }) })).json();
+  assert.equal(ingested.results[0].accepted, true);
+  assert.ok(ingested.latencyMs < 50);
+  const dashboard = await fetch(`${base}/dashboard`);
+  assert.equal(dashboard.status, 200);
+  assert.match(await dashboard.text(), /Beat the Grid/);
+  const stream = await fetch(`${base}/v1/sessions/${created.sessionId}/stream`);
+  const chunk = await stream.body.getReader().read();
+  assert.match(Buffer.from(chunk.value).toString(), /snapshot/);
+  await stream.body.cancel();
+  await runtime.close();
+  await app.close();
+});

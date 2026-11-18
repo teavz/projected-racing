@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8787
+  },
+  "servo": {
+    "schemaVersion": 1,
+    "offlineAfterMs": 1500,
+    "lockQualityMin": 0.5,
+    "maxSampleDelayMs": 500,
+    "staleSourceReverseMs": 50,
+    "maxBatch": 200,
+    "maxRawBytes": 4096
+  },
+  "timing": {
+    "lineHighU": 0.92,
+    "lineLowU": 0.08,
+    "minLapProgress": 0.5,
+    "postCrossLatchProgress": 0.15,
+    "maxForwardJump": 0.2,
+    "maxGapMs": 1000,
+    "startGateU": 0.03,
+    "stagedWaitMs": 15000
+  },
+  "sectors": {
+    "count": 3,
+    "boundaries": null
+  },
+  "difficulties": {
+    "rookie": {
+      "bossLapFactor": 1.12,
+      "trackLimit": 0.85,
+      "trackingGraceMs": 1200
+    },
+    "grid": {
+      "bossLapFactor": 1,
+      "trackLimit": 0.6,
+      "trackingGraceMs": 600
+    },
+    "boss": {
+      "bossLapFactor": 0.97,
+      "trackLimit": 0.45,
+      "trackingGraceMs": 300
+    }
+  },
+  "defaultDifficulty": "grid",
+  "defaultStartMode": "flying",
+  "countdownMs": 3000,
+  "invalidation": {
+    "finishImmediately": true
+  },
+  "safety": {
+    "maxSpeedKmh": null,
+    "egressEnabled": false
+  },
+  "cleaning": {
+    "maxDropFraction": 0.2,
+    "warnDropFraction": 0.05
+  },
+  "telemetryDir": "dist/data",
+  "dataDir": "var/racing",
+  "projectionFit": {
+    "xSpan": 43,
+    "zSpan": 26,
+    "closureSeconds": 1.5
+  }
+}

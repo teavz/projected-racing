@@ -1,0 +1,42 @@
+:root {
+  color-scheme: dark;
+  --bg: #121611;
+  --panel: #1c241f;
+  --ink: #f4f1e8;
+  --muted: #a3aa98;
+  --line: #314036;
+  --cyan: #7ed0dc;
+  --lime: #d7e37a;
+  --amber: #e2b657;
+  --red: #e36a4a;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); }
+header, main, footer { padding: 20px 28px; }
+header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
+.eyebrow { letter-spacing: .16em; font-size: 12px; color: var(--muted); }
+h1 { margin: 4px 0; font-size: 28px; font-weight: 650; }
+.banner { min-width: 280px; padding: 16px 18px; background: var(--panel); border-left: 6px solid var(--cyan); }
+.banner strong { display: block; font-size: 28px; }
+.banner.invalid, .banner.offline { border-color: var(--red); }
+.banner.lost, .banner.hold { border-color: var(--amber); }
+.banner.good { border-color: var(--lime); }
+main { display: grid; grid-template-columns: 1.4fr .8fr; gap: 18px; }
+.panel { background: var(--panel); padding: 18px; border: 1px solid var(--line); }
+.time { font-family: ui-monospace, "SF Mono", monospace; font-size: 84px; line-height: .9; margin: 8px 0; }
+.delta { font-family: ui-monospace, "SF Mono", monospace; font-size: 36px; color: var(--cyan); }
+.meta { display: flex; gap: 22px; color: var(--muted); }
+.meta b { color: var(--ink); display: block; font-size: 18px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.operator { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; letter-spacing: .08em; }
+input, select, button { font: inherit; color: var(--ink); background: #10140f; border: 1px solid var(--line); padding: 10px; }
+button { cursor: pointer; }
+button.primary { background: var(--lime); color: #17200d; border: 0; font-weight: 700; }
+.quality { color: var(--muted); font-family: ui-monospace, monospace; font-size: 13px; }
+footer { color: var(--muted); border-top: 1px solid var(--line); }
+body.spectator .operator, body.spectator footer { display: none; }
+body.spectator .time { font-size: 120px; }
+@media (max-width: 900px) { main, .operator { grid-template-columns: 1fr; } .time { font-size: 56px; } }

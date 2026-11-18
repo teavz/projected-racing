@@ -1,0 +1,6 @@
+{
+  "id": "identity-v1",
+  "type": "identity",
+  "version": 1,
+  "description": "Servo x maps to racing x and servo y maps to racing z. Valid only when the sender already writes the racing frame."
+}

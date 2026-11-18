@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "servoId": "servo-human-1",
+  "role": "human",
+  "sequence": 42,
+  "sourceTimeMs": 1763337600000,
+  "clock": "epoch",
+  "x": 1.25,
+  "y": -0.4,
+  "headingRadians": null,
+  "speedMps": 1.8,
+  "progress": null,
+  "lock": true,
+  "quality": 0.93,
+  "actuators": {
+    "throttle": 0.4,
+    "brake": 0,
+    "steer": -0.15
+  },
+  "flags": ["example"],
+  "raw": {
+    "note": "Passthrough for a future sender. Not interpreted."
+  }
+}
