@@ -1,0 +1,11 @@
+{
+  "id": "tabletop-assumption-v1",
+  "surveyed": false,
+  "widthMeters": 0.6,
+  "startLine": {
+    "a": { "x": 0, "y": -0.3 },
+    "b": { "x": 0, "y": 0.3 }
+  },
+  "forward": { "x": 1, "y": 0 },
+  "notes": "Assumption: the start line is 0.6 m across the origin and travel is +x. Not measured. Width is not applied to scoring."
+}

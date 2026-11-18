@@ -68,4 +68,4 @@ Targets for completion, reset time, and engagement are not accepted yet. Record 
 npm run hardware-demo
 ```
 
-That command scores a synthetic circle lap through the motion adapter. It does not move a car. A physical sender posts the same JSON to `/v1/sessions/:id/motion`. `/estop` only holds scoring. Assumptions and the two default car ids are in `docs/HARDWARE_INTEGRATION.md`.
+That command, or the dashboard **Motion stand-in** button, scores a synthetic circle lap through the motion adapter. It does not move a car. A physical sender posts the same JSON to `/v1/sessions/:id/motion` or connects to `ws://127.0.0.1:8787/ws/hw?session=<id>`. Load `software/config/examples/track-reference.json` with `POST /v1/sessions/:id/track` before treating the origin as real. `/estop` only holds scoring.

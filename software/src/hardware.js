@@ -14,7 +14,8 @@ export const hardwareAssumptions = Object.freeze({
   origin: Object.freeze({ x: 0, z: 0 }),
   axes: "+x matches racing x and +y matches racing z. This is not a surveyed floor frame.",
   smoothing: "Velocity and acceleration are assumed already filtered. This adapter does not smooth them.",
-  transport: "HTTP POST /v1/sessions/:id/motion stands in for WebSocket or UDP. It does not open a radio, serial port, or motor controller.",
+  transport: "HTTP POST /v1/sessions/:id/motion and ws://127.0.0.1/ws/hw stand in for the wired LAN socket. UDP is not listening. Neither opens a radio, serial port, or motor controller.",
+  trackWidth: "A loaded track reference records width. It does not change scoring limits until a surveyed calibration replaces the ghost.",
   estop: "POST /v1/sessions/:id/estop is the existing operator hold. It is not a physical or safety-rated stop.",
   pathFollowing: "No steering or throttle gains are applied. Advisory ghost setpoints stay off the wire unless a human enables egress.",
 });
@@ -43,30 +44,127 @@ export function hardwareSchemaDescription() {
   };
 }
 
-export function frameForGhost(ghost, assumptions = hardwareAssumptions) {
+export function frameForGhost(ghost, assumptions = hardwareAssumptions, track = null) {
   const measured = ghost?.frame?.metersPerUnit;
   const known = Number.isFinite(measured) && measured > 0;
-  return {
+  const frame = {
     id: assumptions.frameId,
     metersPerUnit: known ? measured : assumptions.fallbackMetersPerUnit,
     origin: { x: assumptions.origin.x, z: assumptions.origin.z },
+    originMeters: { x: 0, y: 0 },
+    forward: { x: 1, y: 0 },
+    left: { x: 0, y: 1 },
+    widthMeters: null,
+    referenceId: null,
     assumedScale: !known,
     surveyed: false,
+  };
+  if (!track) return frame;
+  return {
+    ...frame,
+    originMeters: track.originMeters,
+    forward: track.forward,
+    left: track.left,
+    widthMeters: track.widthMeters,
+    referenceId: track.id,
+    surveyed: track.surveyed === true,
+    assumedScale: !known || track.surveyed !== true,
+  };
+}
+
+function basis(frame) {
+  return {
+    originMeters: frame.originMeters ?? { x: 0, y: 0 },
+    forward: frame.forward ?? { x: 1, y: 0 },
+    left: frame.left ?? { x: 0, y: 1 },
+    origin: frame.origin ?? { x: 0, z: 0 },
+    metersPerUnit: frame.metersPerUnit,
   };
 }
 
 export function metersToRacing(point, frame) {
+  const axes = basis(frame);
+  const dx = point.x - axes.originMeters.x;
+  const dy = point.y - axes.originMeters.y;
   return {
-    x: point.x / frame.metersPerUnit + frame.origin.x,
-    y: point.y / frame.metersPerUnit + frame.origin.z,
+    x: (dx * axes.forward.x + dy * axes.forward.y) / axes.metersPerUnit + axes.origin.x,
+    y: (dx * axes.left.x + dy * axes.left.y) / axes.metersPerUnit + axes.origin.z,
   };
 }
 
 export function racingToMeters(point, frame) {
+  const axes = basis(frame);
+  const rx = (point.x - axes.origin.x) * axes.metersPerUnit;
+  const ry = (point.z - axes.origin.z) * axes.metersPerUnit;
   return {
-    x: (point.x - frame.origin.x) * frame.metersPerUnit,
-    y: (point.z - frame.origin.z) * frame.metersPerUnit,
+    x: axes.originMeters.x + rx * axes.forward.x + ry * axes.left.x,
+    y: axes.originMeters.y + rx * axes.forward.y + ry * axes.left.y,
   };
+}
+
+function point2(value, path, errors) {
+  if (!value || typeof value !== "object" || !finite(value.x) || !finite(value.y)) {
+    invalid(errors, path, `${path} needs finite x and y`);
+    return null;
+  }
+  return { x: value.x, y: value.y };
+}
+
+function unit(vector) {
+  const length = Math.hypot(vector.x, vector.y);
+  if (length === 0) return null;
+  return { x: vector.x / length, y: vector.y / length };
+}
+
+export function validateTrackReference(input) {
+  const errors = [];
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return { ok: false, errors: [{ path: "", message: "Track reference must be an object" }] };
+  }
+  if (typeof input.id !== "string" || !/^[A-Za-z0-9._:-]{1,64}$/.test(input.id)) {
+    invalid(errors, "id", "id must be 1-64 letters, numbers, dot, underscore, colon, or hyphen");
+  }
+  if (!finite(input.widthMeters) || input.widthMeters <= 0 || input.widthMeters > 20) {
+    invalid(errors, "widthMeters", "widthMeters must be greater than 0 and at most 20");
+  }
+  const a = point2(input.startLine?.a, "startLine.a", errors);
+  const b = point2(input.startLine?.b, "startLine.b", errors);
+  if (a && b && Math.hypot(b.x - a.x, b.y - a.y) < 0.05) {
+    invalid(errors, "startLine", "start line must be at least 0.05 m long");
+  }
+  const forward = input.forward == null ? { x: 1, y: 0 } : point2(input.forward, "forward", errors);
+  const forwardUnit = forward ? unit(forward) : null;
+  if (forward && !forwardUnit) invalid(errors, "forward", "forward must have a length");
+  const lap = input.referenceLap;
+  const surveyed = input.surveyed === true;
+  if (input.surveyed != null && typeof input.surveyed !== "boolean") invalid(errors, "surveyed", "surveyed must be boolean");
+  if (surveyed && (!Array.isArray(lap) || lap.filter((point) => finite(point?.x) && finite(point?.y)).length < 8)) {
+    invalid(errors, "referenceLap", "A surveyed reference needs at least 8 x/y points. This still does not replace the ghost.");
+  }
+  if (errors.length) return { ok: false, errors };
+  const left = { x: -forwardUnit.y, y: forwardUnit.x };
+  return {
+    ok: true,
+    reference: {
+      id: input.id,
+      surveyed,
+      widthMeters: input.widthMeters,
+      startLine: { a, b },
+      originMeters: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      forward: forwardUnit,
+      left,
+      referenceLapCount: Array.isArray(lap) ? lap.length : 0,
+      notes: typeof input.notes === "string" ? input.notes.slice(0, 240) : null,
+    },
+  };
+}
+
+export function loadTrackReference(input) {
+  const checked = validateTrackReference(input);
+  if (!checked.ok) {
+    throw new AppError("invalid_track_reference", checked.errors.map((error) => `${error.path}: ${error.message}`).join("; "), 400, { errors: checked.errors });
+  }
+  return checked.reference;
 }
 
 export function createHardwareBridge(options = {}) {

@@ -55,3 +55,51 @@ test("a stand-in motion lap crosses the circle fixture", async () => {
   assert.equal(scored.snapshot.result?.outcome, "tie");
   assert.equal(scored.frame.surveyed, false);
 });
+
+import { decodeClientFrames, encodeTextFrame } from "../src/motion-socket.js";
+import { loadTrackReference, metersToRacing } from "../src/hardware.js";
+
+test("an assumed track reference rotates meters without claiming a survey", async () => {
+  const reference = loadTrackReference(JSON.parse(fs.readFileSync(new URL("../config/examples/track-reference.json", import.meta.url))));
+  assert.equal(reference.surveyed, false);
+  assert.equal(reference.widthMeters, 0.6);
+  const { app } = await testApp();
+  const created = await app.createSession({ circuitId: "circle" });
+  const loaded = await app.setTrack(created.sessionId, reference);
+  assert.equal(loaded.frame.referenceId, "tabletop-assumption-v1");
+  assert.equal(loaded.frame.surveyed, false);
+  const rotated = loadTrackReference({
+    id: "travel-plus-y",
+    surveyed: false,
+    widthMeters: 0.6,
+    startLine: { a: { x: -0.3, y: 0 }, b: { x: 0.3, y: 0 } },
+    forward: { x: 0, y: 1 },
+  });
+  const frame = { metersPerUnit: 0.05, origin: { x: 0, z: 0 }, ...rotated, originMeters: rotated.originMeters };
+  const racing = metersToRacing({ x: 0, y: 2 }, frame);
+  assert.equal(racing.x, 40);
+  assert.equal(racing.y, 0);
+  assert.throws(() => loadTrackReference({ id: "bad", surveyed: true, widthMeters: 0.6, startLine: reference.startLine }), /surveyed reference/);
+});
+
+test("the motion stand-in reports the boss car without steering it", async () => {
+  const { app } = await testApp();
+  const created = await app.createSession({ circuitId: "circle" });
+  const scored = await app.replayMotion(created.sessionId, { driverName: "Stand-in", stepMs: 40 });
+  assert.equal(scored.snapshot.result?.outcome, "tie");
+  const status = await app.hardwareStatus(created.sessionId, scored.snapshot.serverTimeMs);
+  assert.equal(status.health.some((item) => item.carId === "2" && item.role === "boss"), true);
+  assert.equal(scored.snapshot.advisorySetpoint, null);
+});
+
+test("websocket text frames round-trip", () => {
+  const encoded = encodeTextFrame('{"car_id":1}');
+  const masked = Buffer.concat([
+    Buffer.from([0x81, 0x80 | encoded[1]]),
+    Buffer.from([1, 2, 3, 4]),
+    Buffer.from(encoded.subarray(2).map((byte, index) => byte ^ [1, 2, 3, 4][index % 4])),
+  ]);
+  const decoded = decodeClientFrames(Buffer.concat([masked, masked.subarray(0, 2)]));
+  assert.deepEqual(decoded.messages, ['{"car_id":1}']);
+  assert.equal(decoded.rest.length, 2);
+});

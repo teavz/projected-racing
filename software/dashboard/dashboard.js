@@ -58,6 +58,15 @@ async function ensureSession() {
 function listen(id) {
   const source = new EventSource(`/v1/sessions/${id}/stream`);
   source.addEventListener("snapshot", (event) => apply(JSON.parse(event.data)));
+  refreshHardware();
+}
+
+async function refreshHardware() {
+  if (!sessionId || spectator) return;
+  const status = await api(`/v1/sessions/${sessionId}/hardware`);
+  const cars = status.health.map((item) => `${item.role} ${item.carId} ${item.lost ? "lost" : "live"}${item.hz ? ` ${Math.round(item.hz)} Hz` : ""}`).join(" · ");
+  const frame = status.frame;
+  $("hardware").textContent = `${frame.referenceId ?? "no track reference"} · surveyed ${frame.surveyed} · width ${frame.widthMeters ?? "unset"} · ${cars || "no cars"}`;
 }
 
 async function command(type, extra = {}) {
@@ -70,6 +79,13 @@ $("start").onclick = () => command("start");
 $("reset").onclick = () => command("reset");
 $("hold").onclick = () => command("hold");
 $("release").onclick = () => command("release");
+$("motion").onclick = async () => {
+  const id = await ensureSession();
+  if ($("driver").value) await command("register-driver", { name: $("driver").value });
+  const body = await api(`/v1/sessions/${id}/motion-demo`, { method: "POST", body: JSON.stringify({ driverName: $("driver").value || "Hardware Stand-in" }) });
+  apply(body.snapshot);
+  await refreshHardware();
+};
 $("simulate").onclick = async () => {
   const id = await ensureSession();
   if ($("driver").value) await command("register-driver", { name: $("driver").value });

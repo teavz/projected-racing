@@ -47,13 +47,15 @@
           <button id="hold" type="button">Hold</button>
           <button id="release" type="button">Release</button>
           <button id="simulate" type="button">Simulate lap</button>
+          <button id="motion" type="button">Motion stand-in</button>
         </span>
       </label>
     </section>
   </main>
   <footer>
     <div class="quality" id="quality">No samples yet.</div>
-    <p>Servo contract v1. This console does not talk to motors, cameras, or radios. Official times come from the scoring service, not from this page's clock.</p>
+    <div class="quality" id="hardware">No track reference loaded.</div>
+    <p>Motion messages are translated into the servo contract. This console does not talk to motors, cameras, or radios. The hold button is not a physical e-stop.</p>
   </footer>
   <script src="/dashboard/dashboard.js"></script>
 </body>

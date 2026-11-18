@@ -15,7 +15,7 @@ import {
 } from "./race.js";
 import { validateServoSample } from "./schema.js";
 import { flyingLapSamples } from "./simulate.js";
-import { bindCar, convertMotion, createHardwareBridge, frameForGhost, hardwareHealth } from "./hardware.js";
+import { bindCar, convertMotion, createHardwareBridge, frameForGhost, hardwareHealth, loadTrackReference, motionLapFromGhost } from "./hardware.js";
 
 function rulesFrom(config) {
   return {
@@ -302,8 +302,8 @@ export async function createApp(options) {
     const session = requireSession(sessionId);
     const ghost = ghostFor(session);
     if (!ghost) throw new AppError("ghost_missing", "Session ghost is not loaded", 409);
-    const frame = frameForGhost(ghost);
     const bridge = bridgeFor(sessionId);
+    const frame = frameForGhost(ghost, undefined, bridge.track ?? null);
     if (body?.bindings && typeof body.bindings === "object") {
       for (const [carId, role] of Object.entries(body.bindings)) bindCar(bridge, carId, role);
     }
@@ -329,6 +329,37 @@ export async function createApp(options) {
     }
     if (!snap) snap = await snapshot(sessionId, now);
     return { frame, health, translated, results, snapshot: snap, advisorySetpoint: snap.advisorySetpoint ?? null };
+  }
+
+  async function setTrack(sessionId, body) {
+    const session = requireSession(sessionId);
+    const reference = loadTrackReference(body);
+    bridgeFor(sessionId).track = reference;
+    return { reference, frame: frameForGhost(ghostFor(session), undefined, reference) };
+  }
+
+  async function replayMotion(sessionId, options = {}) {
+    let now = options.startAt ?? clock.now();
+    let session = requireSession(sessionId);
+    if (["result", "invalid", "offline"].includes(session.state)) {
+      await command(sessionId, { type: "reset" }, now);
+      session = requireSession(sessionId);
+    }
+    if (["countdown", "racing", "lost_tracking", "hold"].includes(session.state)) {
+      throw new AppError("illegal_transition", "Reset the attempt before replaying the motion stand-in", 409);
+    }
+    if (!session.driver) {
+      await command(sessionId, { type: "register-driver", name: options.driverName ?? "Hardware Stand-in" }, now);
+      session = requireSession(sessionId);
+    }
+    if (session.state === "intake") await command(sessionId, { type: "start", countdownMs: options.countdownMs ?? 0 }, now);
+    const ghost = ghostFor(requireSession(sessionId));
+    const frame = frameForGhost(ghost, undefined, bridgeFor(sessionId).track ?? null);
+    const startMs = now + 1;
+    const human = motionLapFromGhost(ghost, { carId: options.carId ?? 1, startMs, frame, stepMs: options.stepMs ?? 33 });
+    const boss = options.includeBoss === false ? [] : motionLapFromGhost(ghost, { carId: options.bossCarId ?? 2, startMs, frame, stepMs: options.stepMs ?? 33 });
+    const samples = [...human, ...boss].sort((left, right) => left.t_ms - right.t_ms || String(left.car_id).localeCompare(String(right.car_id)));
+    return ingestMotion(sessionId, { samples, standIn: true, bindings: options.bindings }, startMs);
   }
 
   async function simulate(sessionId, options = {}) {
@@ -371,8 +402,14 @@ export async function createApp(options) {
     async ingest(sessionId, samples, now) { return enqueue(() => ingest(sessionId, samples, now)); },
     async ingestMotion(sessionId, body, now) { return enqueue(() => ingestMotion(sessionId, body, now)); },
     async hardwareStatus(sessionId, now = clock.now()) {
-      return enqueue(() => ({ health: hardwareHealth(bridgeFor(sessionId), now), frame: frameForGhost(ghostFor(requireSession(sessionId))) }));
+      return enqueue(() => {
+        const session = requireSession(sessionId);
+        const bridge = bridgeFor(sessionId);
+        return { health: hardwareHealth(bridge, now), frame: frameForGhost(ghostFor(session), undefined, bridge.track ?? null), track: bridge.track ?? null };
+      });
     },
+    async setTrack(sessionId, body) { return enqueue(() => setTrack(sessionId, body)); },
+    async replayMotion(sessionId, options) { return enqueue(() => replayMotion(sessionId, options ?? {})); },
     async tick(now) { return enqueue(() => tick(now)); },
     async snapshot(sessionId, now) { return enqueue(() => snapshot(sessionId, now)); },
     async leaderboard(query) { return enqueue(() => leaderboard(query ?? {})); },

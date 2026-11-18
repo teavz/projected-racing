@@ -26,6 +26,7 @@
 - `projection-meters-v1` is an unsurveyed scale, not a floor calibration.
 - A 200 ms silence mark does not replace the 1500 ms scoring timeout.
 - Software hold is the only e-stop this process can express. It does not stop a motor.
+- Track width from a reference file is recorded and is not a scoring limit. The local motion socket is WebSocket on `127.0.0.1`; UDP is not implemented.
 
 ## Human input required next
 

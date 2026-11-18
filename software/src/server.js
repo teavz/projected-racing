@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { asAppError } from "./errors.js";
 import { servoSchemaDescription } from "./schema.js";
 import { hardwareSchemaDescription } from "./hardware.js";
+import { attachMotionSocket } from "./motion-socket.js";
 
 const dashboardDir = path.resolve(fileURLToPath(new URL("../dashboard/", import.meta.url)));
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
@@ -70,6 +71,12 @@ export function createServer(app, config) {
       if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "hardware" && request.method === "GET") {
         return send(response, 200, await app.hardwareStatus(parts[2]));
       }
+      if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "track" && request.method === "POST") {
+        return send(response, 200, await app.setTrack(parts[2], await readJson(request)));
+      }
+      if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "motion-demo" && request.method === "POST") {
+        return send(response, 200, await app.replayMotion(parts[2], await readJson(request)));
+      }
       if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "estop" && request.method === "POST") {
         const snap = await app.command(parts[2], { type: "hold" });
         return send(response, 200, { ...snap, hardwareEstop: "software-hold-only" });
@@ -100,6 +107,7 @@ export function createServer(app, config) {
   });
   const timer = setInterval(() => { app.tick().catch((error) => console.error(error)); }, 200);
   timer.unref();
+  attachMotionSocket(server, app);
   return {
     server,
     listen() {
