@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { asAppError } from "./errors.js";
 import { servoSchemaDescription } from "./schema.js";
+import { hardwareSchemaDescription } from "./hardware.js";
 
 const dashboardDir = path.resolve(fileURLToPath(new URL("../dashboard/", import.meta.url)));
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
@@ -47,6 +48,7 @@ export function createServer(app, config) {
       }
       if (request.method === "GET" && url.pathname === "/health") return send(response, 200, { ok: true, service: "projected-racing", schemaVersion: 1 });
       if (request.method === "GET" && url.pathname === "/v1/schema/servo") return send(response, 200, servoSchemaDescription());
+      if (request.method === "GET" && url.pathname === "/v1/schema/motion") return send(response, 200, hardwareSchemaDescription());
       if (request.method === "GET" && url.pathname === "/v1/circuits") return send(response, 200, { circuits: app.listCircuits() });
       if (request.method === "GET" && url.pathname === "/v1/leaderboard") {
         return send(response, 200, { leaderboard: await app.leaderboard({ circuitId: url.searchParams.get("circuitId") ?? undefined, difficulty: url.searchParams.get("difficulty") ?? undefined }) });
@@ -61,6 +63,16 @@ export function createServer(app, config) {
       }
       if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "commands" && request.method === "POST") {
         return send(response, 200, await app.command(parts[2], await readJson(request)));
+      }
+      if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "motion" && request.method === "POST") {
+        return send(response, 200, await app.ingestMotion(parts[2], await readJson(request)));
+      }
+      if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "hardware" && request.method === "GET") {
+        return send(response, 200, await app.hardwareStatus(parts[2]));
+      }
+      if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "estop" && request.method === "POST") {
+        const snap = await app.command(parts[2], { type: "hold" });
+        return send(response, 200, { ...snap, hardwareEstop: "software-hold-only" });
       }
       if (parts[0] === "v1" && parts[1] === "sessions" && parts[2] && parts[3] === "samples" && request.method === "POST") {
         const body = await readJson(request);

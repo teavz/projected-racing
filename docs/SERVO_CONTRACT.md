@@ -37,3 +37,7 @@ Progress-only samples can score laps and sectors. They cannot fail track limits.
 ## Egress
 
 Advisory setpoints can be derived from the ghost profile. `safety.egressEnabled` is false. A setpoint is not a hardware command. The service never emits PWM, motor mixing, or an e-stop.
+
+## Hardware edge
+
+Cars do not send this sample directly. `docs/HARDWARE_INTEGRATION.md` defines the motion message and the assumed translation into this contract.

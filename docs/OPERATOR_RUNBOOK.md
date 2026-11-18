@@ -61,3 +61,11 @@ When it is unblocked, run the existing dashboard and record one row per student:
 - one line of feedback
 
 Targets for completion, reset time, and engagement are not accepted yet. Record the counts. Do not invent a pass threshold.
+
+## Hardware stand-in
+
+```sh
+npm run hardware-demo
+```
+
+That command scores a synthetic circle lap through the motion adapter. It does not move a car. A physical sender posts the same JSON to `/v1/sessions/:id/motion`. `/estop` only holds scoring. Assumptions and the two default car ids are in `docs/HARDWARE_INTEGRATION.md`.

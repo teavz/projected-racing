@@ -19,6 +19,14 @@
 
 `oracle_x_rcg` planned a motion message with `car_id`, `t_ms`, `x`, `y`, `vx`, `vy`, `ax`, `ay`, meters, at least 30 Hz, and a car marked lost after 200 ms. This service does not accept that message. Do not merge the schemas in this pass. Hardware owners must choose before a physical car is connected. Until then, synthetic and recorded progress samples use the servo contract.
 
+## Hardware stand-in
+
+- The hardware message is translated at the edge. Scoring still uses the servo sample.
+- `car_id` 1 is human and `car_id` 2 is boss until a binding replaces that.
+- `projection-meters-v1` is an unsurveyed scale, not a floor calibration.
+- A 200 ms silence mark does not replace the 1500 ms scoring timeout.
+- Software hold is the only e-stop this process can express. It does not stop a motor.
+
 ## Human input required next
 
 - OCI tenancy, budget, and approval to spend.

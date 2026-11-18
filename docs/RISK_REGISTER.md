@@ -3,7 +3,8 @@
 | Risk | Impact | Current handling | Owner next |
 | --- | --- | --- | --- |
 | No OCI tenancy or spend approval | Cloud architecture cannot be demonstrated as provisioned | Local ports only. No apply and no invented resource names | Project managers and Oracle contact |
-| Servo contract differs from the older motion message | Hardware can build the wrong payload | This service accepts only the servo sample. The divergence is recorded in `docs/DESIGN_DECISIONS.md` | Hardware and software together, before a car is connected |
+| Servo contract differs from the older motion message | Hardware can build the wrong payload | The motion message is translated at the edge. Scoring still uses the servo sample. Bindings and scale are assumptions in `docs/HARDWARE_INTEGRATION.md` | Hardware and software together, before a car is connected |
+| Unsurveyed meter scale used on a real car | Track limits and lap progress would be wrong | The stand-in marks `surveyed: false` and refuses to invent a floor origin | Track calibration owner |
 | Identity calibration is not a survey | Lateral limits and geometric progress are meaningless on a physical track | Affine calibration is required before those checks are trusted | Track calibration owner |
 | Feed timeout is 1500 ms, not 200 ms | A lost car stays on the timing line longer than the older planning note | Timeout is explicit and voids the lap. It is not an accepted SOW number | Scorecard review |
 | Official telemetry may never arrive | Boss line may remain the historical OpenF1 recording | Lineage is stored on the ghost. It is not labeled as live team telemetry | Oracle telemetry decision |

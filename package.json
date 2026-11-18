@@ -10,6 +10,7 @@
     "start": "node software/bin/projected-racing.js serve",
     "ghosts": "node software/bin/projected-racing.js recompute-ghosts",
     "simulate": "node software/bin/projected-racing.js simulate --circuit monza",
+    "hardware-demo": "node software/bin/projected-racing.js hardware-demo",
     "verify:sim": "node verify.mjs"
   }
 }

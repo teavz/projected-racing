@@ -15,6 +15,7 @@ import {
 } from "./race.js";
 import { validateServoSample } from "./schema.js";
 import { flyingLapSamples } from "./simulate.js";
+import { bindCar, convertMotion, createHardwareBridge, frameForGhost, hardwareHealth } from "./hardware.js";
 
 function rulesFrom(config) {
   return {
@@ -47,6 +48,7 @@ export async function createApp(options) {
   const ghosts = new Map();
   const sessions = new Map();
   const listeners = new Set();
+  const hardwareBridges = new Map();
   const metrics = { sessionsCreated: 0, samplesAccepted: 0, samplesRejected: 0, lapsScored: 0, falseCrossings: 0 };
   let chain = Promise.resolve();
 
@@ -287,6 +289,48 @@ export async function createApp(options) {
     }
   }
 
+  function bridgeFor(sessionId) {
+    let bridge = hardwareBridges.get(sessionId);
+    if (!bridge) {
+      bridge = createHardwareBridge();
+      hardwareBridges.set(sessionId, bridge);
+    }
+    return bridge;
+  }
+
+  async function ingestMotion(sessionId, body, now = clock.now()) {
+    const session = requireSession(sessionId);
+    const ghost = ghostFor(session);
+    if (!ghost) throw new AppError("ghost_missing", "Session ghost is not loaded", 409);
+    const frame = frameForGhost(ghost);
+    const bridge = bridgeFor(sessionId);
+    if (body?.bindings && typeof body.bindings === "object") {
+      for (const [carId, role] of Object.entries(body.bindings)) bindCar(bridge, carId, role);
+    }
+    const messages = Array.isArray(body?.samples) ? body.samples : Array.isArray(body) ? body : body?.car_id == null ? [] : [body];
+    if (messages.length === 0) throw new AppError("invalid_batch", "Motion ingest needs one sample or a samples array", 400);
+    const useSampleClock = body?.standIn === true;
+    const translated = [];
+    const health = [];
+    const results = [];
+    let snap = null;
+    for (const message of messages) {
+      const received = useSampleClock && Number.isFinite(message?.t_ms) ? message.t_ms : now;
+      const converted = convertMotion(bridge, message, frame, received);
+      health.push(converted.health);
+      if (!converted.accepted) {
+        results.push({ accepted: false, rejection: converted.rejection });
+        continue;
+      }
+      translated.push(converted.servo);
+      const scored = await ingest(sessionId, [converted.servo], received);
+      results.push(scored.results[0]);
+      snap = scored.snapshot;
+    }
+    if (!snap) snap = await snapshot(sessionId, now);
+    return { frame, health, translated, results, snapshot: snap, advisorySetpoint: snap.advisorySetpoint ?? null };
+  }
+
   async function simulate(sessionId, options = {}) {
     let now = options.startAt ?? clock.now();
     const existing = requireSession(sessionId);
@@ -325,6 +369,10 @@ export async function createApp(options) {
     async createSession(input, now) { return enqueue(() => createSession(input, now)); },
     async command(sessionId, body, now) { return enqueue(() => command(sessionId, body, now)); },
     async ingest(sessionId, samples, now) { return enqueue(() => ingest(sessionId, samples, now)); },
+    async ingestMotion(sessionId, body, now) { return enqueue(() => ingestMotion(sessionId, body, now)); },
+    async hardwareStatus(sessionId, now = clock.now()) {
+      return enqueue(() => ({ health: hardwareHealth(bridgeFor(sessionId), now), frame: frameForGhost(ghostFor(requireSession(sessionId))) }));
+    },
     async tick(now) { return enqueue(() => tick(now)); },
     async snapshot(sessionId, now) { return enqueue(() => snapshot(sessionId, now)); },
     async leaderboard(query) { return enqueue(() => leaderboard(query ?? {})); },

@@ -7,7 +7,7 @@ The projection simulator in `dist/` is the floor display. The Node service in `s
 - `software/src/app.js` is the testable core. HTTP, the dashboard, and the CLI call it.
 - `software/src/race.js` owns the race state machine, timing, and snapshots.
 - `software/src/ghost.js` cleans a recorded lap, fits it with the simulator projection constants, closes the timing-line gap, and writes an immutable ghost. The ghost id is a content hash. Rebuilding the same inputs yields the same id.
-- `software/src/schema.js` validates servo samples. The service does not open cameras, serial ports, motor controllers, or pinouts.
+- `software/src/schema.js` validates servo samples. `software/src/hardware.js` translates the hardware motion message into those samples. Neither opens a camera, serial port, motor controller, or pinout.
 - `software/src/store.js` is the storage port. Memory and local files implement the same methods. There is no OCI client.
 - `software/src/server.js` serves the API, server-sent snapshots, and the dashboard. It binds to `127.0.0.1:8787` unless `software/config/default.json` changes that.
 - `software/src/simulate.js` builds synthetic progress samples so a lap can be scored without a car.

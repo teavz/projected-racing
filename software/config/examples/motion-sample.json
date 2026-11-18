@@ -1,0 +1,13 @@
+{
+  "car_id": 1,
+  "t_ms": 1763337600000,
+  "x": 1.25,
+  "y": -0.4,
+  "vx": 1.8,
+  "vy": 0.2,
+  "ax": 0,
+  "ay": 0,
+  "throttle": 40,
+  "battery_v": 7.4,
+  "note": "Unknown keys such as note and battery_v are ignored. car_id 1 is the assumed human car."
+}

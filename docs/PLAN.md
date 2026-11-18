@@ -1,6 +1,6 @@
 # Projected Racing software plan
 
-Status: scoring loop closed on branch `codex/close-software-infrastructure`. Local verification is green except the HTTP listen test where the sandbox blocks `127.0.0.1`. OCI provisioning and the physical playtest remain blocked. This pass is not committed.
+Status: scoring loop and a hardware stand-in are on branch `codex/close-software-infrastructure`. The stand-in is not a car, a survey, or an e-stop. OCI provisioning and the physical playtest remain blocked.
 
 This plan covers the software infrastructure for Beat the Grid. It does not design hardware. Live observations enter through the servo contract in `docs/SERVO_CONTRACT.md`.
 
@@ -18,7 +18,7 @@ The repository has two local parts. `dist/` is still the projection simulator. `
 
 ## Problems to close
 
-1. Closed locally: live car data enters as a versioned servo sample. Hardware remapping is still an open human decision.
+1. Closed locally: live car data enters as a versioned servo sample. A motion-message adapter stands in for the car. The measured calibration is still an open human decision.
 2. Closed locally: recorded laps become versioned ghost artifacts with lineage, sectors, and an advisory profile.
 3. Closed locally: lap, sector, boss delta, personal best, and leaderboard have one service.
 4. Closed locally: intake, countdown, racing, lost tracking, invalid, offline, result, hold, and reset are explicit states.
